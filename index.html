@@ -299,7 +299,7 @@ function generatePreview(){
   const discRow=pct>0?`<tr><td>Descuento pago a tiempo (${pct}%)</td><td></td><td></td><td style="color:var(--green)">−${fmt(disc)}</td></tr>`:'';
   document.getElementById('preview-doc').innerHTML=`
     <div class="pdoc-hdr">
-      <div><div class="pdoc-brand">Matías Gatica</div><div class="pdoc-sub">Editor &amp; Colorist · matiasgatica.com · contabilidad@matiasgatica.com</div></div>
+      <div><div class="pdoc-brand">Matías Gatica</div><div class="pdoc-sub">Editor &amp; Colorist · matiasgatica.com · hola@matiasgatica.com</div></div>
       <div class="pdoc-num"><div class="num">Presupuesto #${numero}</div><div class="meta">Fecha: ${today()}</div><div class="meta">Válido por 1 semana</div></div>
     </div>
     <div class="pdoc-for">Preparado para: <strong>${cliente}</strong>${proyecto?' · '+proyecto:''}</div>
