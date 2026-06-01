@@ -160,7 +160,12 @@
     <div class="grid3">
       <div class="card"><label class="lbl">Para (cliente / empresa)</label><input type="text" id="ic" placeholder="Nombre o empresa" /></div>
       <div class="card"><label class="lbl">Descripción del proyecto</label><input type="text" id="ip" placeholder="Ej: Aftermovie maratón Santiago" /></div>
-      <div class="card"><label class="lbl">N° presupuesto</label><input type="text" id="inum" placeholder="2026_XXX" /></div>
+      <div class="card"><label class="lbl">N° presupuesto</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="year-prefix" style="font-size:13px;color:var(--text2);white-space:nowrap;font-weight:500;padding:7px 0"></span>
+          <input type="number" id="inum" placeholder="140" style="width:100%" min="1" />
+        </div>
+      </div>
     </div>
     <p class="sec">Ítems rápidos</p>
     <div class="quick-wrap" id="quick-tags"></div>
@@ -293,7 +298,10 @@ function renderTotals(){
 function generatePreview(){
   const cliente=document.getElementById('ic').value.trim()||'Cliente';
   const proyecto=document.getElementById('ip').value.trim();
-  const numero=document.getElementById('inum').value.trim()||'2026_XXX';
+  const year=new Date().getFullYear();
+  const prefix=`${year}_`;
+  const numeroInput=document.getElementById('inum').value.trim();
+  const numero=numeroInput?`${prefix}${numeroInput}`:`${prefix}XXX`;
   const bruto=items.reduce((s,i)=>s+(i.tarifa*i.qty),0);
   const pct=parseFloat(document.getElementById('disc-pct').value)||0;
   const disc=Math.round(bruto*pct/100),neto=bruto-disc,iva=Math.round(neto*.19),total=neto+iva;
@@ -442,6 +450,8 @@ function printWithName(){
     window.print();
   }
 }
+// Inicializar prefijo de año
+document.getElementById('year-prefix').textContent=new Date().getFullYear()+'_';
 buildQ();addItem('',0,1);renderTotals();
 </script>
 </body>
