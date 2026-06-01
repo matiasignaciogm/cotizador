@@ -195,7 +195,7 @@
       <div class="btn-row no-print">
         <button class="btn primary sm" onclick="saveQuote()">Guardar en historial</button>
         <button class="btn sm" onclick="copyText()">Copiar texto</button>
-        <button class="btn sm" onclick="window.print()">Imprimir / PDF</button>
+        <button class="btn sm" onclick="printWithName()">Imprimir / PDF</button>
         <button class="btn sm" onclick="resetForm()">Nueva cotización</button>
       </div>
       <p class="save-msg" id="save-msg">✓ Guardada en historial</p>
@@ -432,6 +432,16 @@ function importJSON(event) {
   event.target.value = '';
 }
 
+function printWithName(){
+  if(currentQuote){
+    const nombre=`Presupuesto ${currentQuote.numero} — ${currentQuote.cliente}`;
+    document.title=nombre;
+    window.print();
+    setTimeout(()=>document.title='Cotizador — Matías Gatica',1000);
+  } else {
+    window.print();
+  }
+}
 buildQ();addItem('',0,1);renderTotals();
 </script>
 </body>
