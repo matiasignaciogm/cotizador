@@ -71,32 +71,34 @@
   .btn.sm{font-size:12px;padding:6px 13px}
   .btn.danger{color:var(--red);border-color:var(--red-bg);background:var(--red-bg)}
   .btn-row{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+  /* ── DOCUMENTO / PREVIEW ── fondo oscuro tipo template MG ── */
+  --doc-bg:#1e1e1e;--doc-text:#f0efe8;--doc-text2:#aaa9a3;--doc-border:rgba(255,255,255,.15);
   .preview-wrap{margin-top:1.75rem}
-  .preview-doc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2.25rem;box-shadow:var(--shadow)}
+  .preview-doc{background:var(--doc-bg);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:2.25rem;box-shadow:var(--shadow)}
   .pdoc-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem;gap:1rem}
-  .pdoc-brand{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--text)}
-  .pdoc-sub{font-size:12px;color:var(--text2);margin-top:4px}
+  .pdoc-brand{font-size:20px;font-weight:700;letter-spacing:-.02em;color:var(--doc-text)}
+  .pdoc-sub{font-size:12px;color:var(--doc-text2);margin-top:4px}
   .pdoc-num{text-align:right}
-  .pdoc-num .num{font-size:15px;font-weight:600;color:var(--text)}
-  .pdoc-num .meta{font-size:12px;color:var(--text2);margin-top:3px}
-  .pdoc-for{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
-  .pdoc-for strong{color:var(--text)}
+  .pdoc-num .num{font-size:15px;font-weight:600;color:var(--doc-text)}
+  .pdoc-num .meta{font-size:12px;color:var(--doc-text2);margin-top:3px}
+  .pdoc-for{font-size:13px;color:var(--doc-text2);margin-bottom:1.25rem}
+  .pdoc-for strong{color:var(--doc-text)}
   .ptable{width:100%;border-collapse:collapse;font-size:13px}
-  .ptable th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);border-bottom:1px solid var(--border);padding:6px 4px 6px 0;text-align:left}
+  .ptable th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--doc-text2);border-bottom:1px solid var(--doc-border);padding:6px 4px 6px 0;text-align:left}
   .ptable th:not(:first-child){text-align:right}
-  .ptable td{padding:9px 4px 9px 0;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+  .ptable td{padding:9px 4px 9px 0;border-bottom:1px solid var(--doc-border);color:var(--doc-text);vertical-align:middle}
   .ptable td:not(:first-child){text-align:right}
   .ptable tr:last-child td{border-bottom:none}
   .ptotals{margin-top:1rem;display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:260px;margin-left:auto}
   .pt-row{display:flex;gap:3rem;font-size:13px;width:100%;justify-content:flex-end}
-  .pt-row .pl{color:var(--text2)}
-  .pt-row .pv{font-weight:600;min-width:110px;text-align:right}
-  .pt-row.pfinal{border-top:1px solid var(--border);padding-top:7px;margin-top:4px}
-  .pt-row.pfinal .pl{font-weight:600;color:var(--text);font-size:14px}
-  .pt-row.pfinal .pv{font-size:16px}
-  .pconds{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border)}
-  .pconds p{font-size:12px;color:var(--text2);margin-bottom:4px;line-height:1.55}
-  .pconds strong{color:var(--text)}
+  .pt-row .pl{color:var(--doc-text2)}
+  .pt-row .pv{font-weight:600;min-width:110px;text-align:right;color:var(--doc-text)}
+  .pt-row.pfinal{border-top:1px solid var(--doc-border);padding-top:7px;margin-top:4px}
+  .pt-row.pfinal .pl{font-weight:600;color:var(--doc-text);font-size:14px}
+  .pt-row.pfinal .pv{font-size:16px;color:var(--doc-text)}
+  .pconds{margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--doc-border)}
+  .pconds p{font-size:12px;color:var(--doc-text2);margin-bottom:4px;line-height:1.55}
+  .pconds strong{color:var(--doc-text)}
   .save-msg{font-size:12px;color:var(--green);margin-top:6px;display:none}
   .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
   @media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
@@ -116,14 +118,27 @@
   .b-pend{background:var(--amber-bg);color:var(--amber)}
   .hst-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
   @media print{
-    body{background:#fff;color:#000;font-size:11pt}
+    @page{size:A4;margin:1.5cm}
+    body{background:#1e1e1e!important;color:#f0efe8!important;font-size:11pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
     .shell{max-width:100%;padding:0}
     .app-header,.tabs,.no-print{display:none!important}
     .pane{display:block!important}
     #pane-nueva>*:not(.preview-wrap){display:none!important}
     .preview-wrap{display:block!important;margin:0}
-    .preview-doc{border:none;box-shadow:none;padding:0}
+    .preview-doc{border:none!important;box-shadow:none!important;padding:0!important;background:#1e1e1e!important}
     .btn-row,.save-msg{display:none!important}
+    .pdoc-brand{font-size:18pt;color:#f0efe8!important}
+    .pdoc-sub,.pdoc-for{color:#aaa9a3!important}
+    .pdoc-for strong{color:#f0efe8!important}
+    .ptable th{color:#aaa9a3!important;border-bottom:1pt solid rgba(255,255,255,.2)!important}
+    .ptable td{color:#f0efe8!important;border-bottom:1pt solid rgba(255,255,255,.12)!important}
+    .pt-row .pl{color:#aaa9a3!important}
+    .pt-row .pv{color:#f0efe8!important}
+    .pfinal .pl,.pfinal .pv{color:#f0efe8!important}
+    .pt-row.pfinal{border-top:1pt solid rgba(255,255,255,.2)!important}
+    .pconds{border-top:1pt solid rgba(255,255,255,.15)!important}
+    .pconds p{color:#aaa9a3!important}
+    .pconds strong{color:#f0efe8!important}
   }
 </style>
 </head>
@@ -186,7 +201,7 @@
 
   <div id="pane-historial" class="pane">
     <div class="stat-grid" id="stats-grid"></div>
-    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap" class="no-print">
       <button class="btn sm primary" onclick="exportCSV()">Exportar CSV</button>
       <button class="btn sm" onclick="exportJSON()">Exportar respaldo (.json)</button>
       <label class="btn sm" style="cursor:pointer;margin:0">
@@ -203,18 +218,18 @@ const LS='mgpost_quotes_v2';
 let items=[],iid=0,currentQuote=null;
 const QUICK=[
   {grp:'Recaps y eventos'},
-  {d:'Recap / aftermovie 1 min',t:350000},
+  {d:'Recap / Aftermovie 1 min',t:350000},
   {d:'Jornada edición en tiempo real',t:350000},
   {d:'Diseño sonoro y online',t:0},
-  {grp:'Cápsulas por duración'},
-  {d:'Cápsula 20–30 min',t:200000},
-  {d:'Cápsula 30–40 min',t:250000},
-  {d:'Cápsula 40–60 min',t:300000},
+  {grp:'Cápsulas'},
+  {d:"Cápsula 20–30''",t:200000},
+  {d:"Cápsula 30–40''",t:250000},
+  {d:"Cápsula 40–60''",t:300000},
   {grp:'Montaje complejo'},
-  {d:'Armado madre 30 min',t:300000},
-  {d:'Armado 20 min',t:150000},
-  {d:'Aftermovie 90 min',t:400000},
-  {d:'Recap interno 40 min',t:300000},
+  {d:"Armado madre 30''",t:300000},
+  {d:"Armado 20''",t:150000},
+  {d:"Aftermovie 90'",t:400000},
+  {d:"Recap interno 40''",t:300000},
   {grp:'Color y adaptaciones'},
   {d:'Color grading',t:350000},
   {d:'Adaptación de formato (9:16 / 4:5 / 1:1)',t:50000},
