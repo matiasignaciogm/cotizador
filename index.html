@@ -4,6 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Cotizador — Matías Gatica</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <style>
   :root {
     --bg:#fafaf9;--surface:#fff;--surface2:#f4f3f0;--border:rgba(0,0,0,.10);
@@ -224,6 +226,59 @@
 <script>
 const LS='mgpost_quotes_v2';
 let items=[],iid=0,currentQuote=null;
+
+// ── Firebase ──────────────────────────────────────────────
+const firebaseConfig={
+  apiKey:"AIzaSyACRmopx1jOxZyvKtjljeiUQLtkKDg6qTA",
+  authDomain:"mgpost-cotizador.firebaseapp.com",
+  projectId:"mgpost-cotizador",
+  storageBucket:"mgpost-cotizador.firebasestorage.app",
+  messagingSenderId:"803440454386",
+  appId:"1:803440454386:web:72573a66ce2b9520027e6b"
+};
+let DOC=null;
+try{
+  firebase.initializeApp(firebaseConfig);
+  const db=firebase.firestore();
+  DOC=db.collection('mgpost').doc('cotizaciones');
+}catch(e){
+  console.warn('Firebase no disponible, modo offline:',e);
+}
+
+async function loadQ(){
+  if(DOC){
+    try{
+      const snap=await DOC.get();
+      if(snap.exists){
+        const qs=snap.data().quotes||[];
+        try{localStorage.setItem(LS,JSON.stringify(qs));}catch{}
+        return qs;
+      }
+      const local=JSON.parse(localStorage.getItem(LS)||'[]');
+      if(local.length){
+        await DOC.set({quotes:local});
+        console.log('Migración localStorage → Firebase completada');
+      }
+      return local;
+    }catch(e){
+      console.warn('Error Firebase, usando localStorage:',e);
+    }
+  }
+  return JSON.parse(localStorage.getItem(LS)||'[]');
+}
+
+async function saveQ(qs){
+  if(DOC){
+    try{
+      await DOC.set({quotes:qs});
+      try{localStorage.setItem(LS,JSON.stringify(qs));}catch{}
+      return;
+    }catch(e){
+      console.warn('Error Firebase, guardando en localStorage:',e);
+    }
+  }
+  try{localStorage.setItem(LS,JSON.stringify(qs));}catch{}
+}
 const QUICK=[
   {grp:'Recaps y eventos'},
   {d:'Recap / Aftermovie 1 min',t:350000},
@@ -246,8 +301,6 @@ const QUICK=[
 ];
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
 const today=()=>new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'});
-function loadQ(){try{return JSON.parse(localStorage.getItem(LS)||'[]')}catch{return[]}}
-function saveQ(qs){try{localStorage.setItem(LS,JSON.stringify(qs))}catch{}}
 function switchTab(t){
   document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='nueva')||(i===1&&t==='historial')));
   document.getElementById('pane-nueva').classList.toggle('active',t==='nueva');
@@ -337,11 +390,11 @@ function generatePreview(){
   document.getElementById('save-msg').style.display='none';
   pw.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function saveQuote(){
+async function saveQuote(){
   if(!currentQuote)return;
-  const qs=loadQ(),idx=qs.findIndex(q=>q.numero===currentQuote.numero);
+  const qs=await loadQ(),idx=qs.findIndex(q=>q.numero===currentQuote.numero);
   if(idx>=0)qs[idx]=currentQuote;else qs.unshift(currentQuote);
-  saveQ(qs);
+  await saveQ(qs);
   const msg=document.getElementById('save-msg');msg.style.display='block';
   setTimeout(()=>msg.style.display='none',3000);
 }
@@ -362,8 +415,10 @@ function resetForm(){
   document.getElementById('preview-wrap').style.display='none';
   renderTotals();addItem('',0,1);window.scrollTo({top:0,behavior:'smooth'});
 }
-function renderHistory(){
-  const qs=loadQ();
+async function renderHistory(){
+  const list=document.getElementById('hst-list');
+  list.innerHTML='<div class="hst-empty" style="padding:2rem">Cargando...</div>';
+  const qs=await loadQ();
   const totalN=qs.reduce((s,q)=>s+(q.neto||0),0);
   const apr=qs.filter(q=>q.estado==='aprobada').length;
   const tick=qs.length?Math.round(totalN/qs.length):0;
@@ -372,7 +427,6 @@ function renderHistory(){
     <div class="stat-card"><div class="stat-n">${fmt(totalN)}</div><div class="stat-l">Neto total cotizado</div></div>
     <div class="stat-card"><div class="stat-n">${apr}</div><div class="stat-l">Aprobadas</div></div>
     <div class="stat-card"><div class="stat-n">${fmt(tick)}</div><div class="stat-l">Ticket promedio</div></div>`;
-  const list=document.getElementById('hst-list');
   if(!qs.length){list.innerHTML='<div class="hst-empty">Aún no hay cotizaciones guardadas.<br>Genera y guarda una desde "Nueva cotización".</div>';return;}
   list.innerHTML=qs.map((q,i)=>`
     <div class="hst-item">
@@ -382,13 +436,45 @@ function renderHistory(){
       </div>
       <div class="hst-right"><div class="hst-amount">${fmt(q.total)}</div><div class="hst-neto">neto ${fmt(q.neto)}</div></div>
       <div class="hst-actions">
+        <button class="btn sm" onclick="loadIntoEditor(${i})" style="font-size:11px;padding:5px 10px;background:var(--surface2)">Editar</button>
         <button class="btn sm" onclick="toggleE(${i})" style="font-size:11px;padding:5px 10px">${q.estado==='aprobada'?'Marcar pendiente':'Marcar aprobada'}</button>
         <button class="btn sm danger" onclick="delQ(${i})" title="Eliminar">×</button>
       </div>
-    </div>`).join('');
+    </div>`).join('');}
+async function loadIntoEditor(idx){
+  const qs=await loadQ();
+  const q=qs[idx];
+  if(!q)return;
+  items=[];iid=0;currentQuote=null;
+  document.getElementById('items-cont').innerHTML='';
+  document.getElementById('preview-wrap').style.display='none';
+  document.getElementById('ic').value=q.cliente||'';
+  document.getElementById('ip').value=q.proyecto||'';
+  const numParts=(q.numero||'').split('_');
+  document.getElementById('inum').value=numParts.length>1?numParts.slice(1).join('_'):q.numero||'';
+  document.getElementById('disc-pct').value=q.pct||0;
+  (q.items||[]).forEach(it=>addItem(it.desc,it.tarifa,it.qty));
+  renderTotals();
+  switchTab('nueva');
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{
+    const msg=document.getElementById('save-msg');
+    msg.textContent='✓ Cotización cargada — modifica y genera de nuevo';
+    msg.style.display='block';
+    setTimeout(()=>{msg.style.display='none';msg.textContent='✓ Guardada en historial';},3000);
+  },300);
 }
-function toggleE(idx){const qs=loadQ();if(!qs[idx])return;qs[idx].estado=qs[idx].estado==='aprobada'?'pendiente':'aprobada';saveQ(qs);renderHistory();}
-function delQ(idx){if(!confirm('¿Eliminar esta cotización?'))return;const qs=loadQ();qs.splice(idx,1);saveQ(qs);renderHistory();}
+async function toggleE(idx){
+  const qs=await loadQ();
+  if(!qs[idx])return;
+  qs[idx].estado=qs[idx].estado==='aprobada'?'pendiente':'aprobada';
+  await saveQ(qs);renderHistory();
+}
+async function delQ(idx){
+  if(!confirm('¿Eliminar esta cotización?'))return;
+  const qs=await loadQ();qs.splice(idx,1);
+  await saveQ(qs);renderHistory();
+}
 
 function download(content, filename, type) {
   const a = document.createElement('a');
@@ -398,8 +484,8 @@ function download(content, filename, type) {
   URL.revokeObjectURL(a.href);
 }
 
-function exportCSV() {
-  const qs = loadQ();
+async function exportCSV() {
+  const qs = await loadQ();
   if (!qs.length) { alert('No hay cotizaciones guardadas aún.'); return; }
   const headers = ['N° Presupuesto','Cliente','Proyecto','Fecha','Estado','Neto bruto','Descuento %','Descuento $','Neto final','IVA','Total + IVA'];
   const rows = qs.map(q => [
@@ -411,30 +497,28 @@ function exportCSV() {
   const date = new Date().toISOString().split('T')[0];
   download([headers.join(','), ...rows].join('\r\n'), `mgpost_cotizaciones_${date}.csv`, 'text/csv;charset=utf-8;');
 }
-
-function exportJSON() {
-  const qs = loadQ();
+async function exportJSON() {
+  const qs = await loadQ();
   if (!qs.length) { alert('No hay cotizaciones guardadas aún.'); return; }
   const date = new Date().toISOString().split('T')[0];
   download(JSON.stringify(qs, null, 2), `mgpost_respaldo_${date}.json`, 'application/json');
 }
-
-function importJSON(event) {
+async function importJSON(event) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
+  reader.onload = async e => {
     try {
       const imported = JSON.parse(e.target.result);
-      if (!Array.isArray(imported)) { alert('Archivo inválido. Debe ser un respaldo .json generado por este cotizador.'); return; }
-      const existing = loadQ();
+      if (!Array.isArray(imported)) { alert('Archivo inválido.'); return; }
+      const existing = await loadQ();
       const existingNums = new Set(existing.map(q => q.numero));
       const nuevas = imported.filter(q => !existingNums.has(q.numero));
       const merged = [...nuevas, ...existing];
-      saveQ(merged);
+      await saveQ(merged);
       renderHistory();
-      alert(`✓ Importación exitosa.\n${nuevas.length} cotización(es) nueva(s) agregada(s).\n${imported.length - nuevas.length} ya existían y no se duplicaron.`);
-    } catch { alert('Error al leer el archivo. Asegúrate de que sea un .json válido.'); }
+      alert(`✓ Importación exitosa.\n${nuevas.length} cotización(es) nueva(s) agregada(s).`);
+    } catch { alert('Error al leer el archivo.'); }
   };
   reader.readAsText(file);
   event.target.value = '';
