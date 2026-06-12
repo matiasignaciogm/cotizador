@@ -58,6 +58,21 @@
   .qtag:hover{background:var(--accent-bg);color:var(--accent-txt);border-color:var(--accent-bg)}
   .qtag.grp{background:none;border:none;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;cursor:default;padding:8px 2px 3px;width:100%;border-radius:0}
   .qtag.grp:hover{background:none;color:var(--text3)}
+  .qitem{display:inline-flex;align-items:center;gap:2px}
+  .qedit{font-size:12px;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:none;color:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;padding:0;font-family:inherit;line-height:1}
+  .qedit:hover{border-color:var(--border-med);color:#000}
+  [data-theme="dark"] .qedit{color:var(--text3)}
+  [data-theme="dark"] .qedit:hover{color:var(--text)}
+  .qadd-new{font-size:12px;padding:4px 11px;border-radius:20px;background:none;color:rgba(0,0,0,.5);border:1px dashed var(--border-med);cursor:pointer;transition:all .15s;font-family:inherit}
+  .qadd-new:hover{background:var(--accent-bg);color:var(--accent-txt);border-color:var(--accent-bg);border-style:solid}
+  [data-theme="dark"] .qadd-new{color:var(--text2)}
+  select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:100;padding:1rem}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:var(--radius);padding:1.5rem;width:100%;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+  .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text)}
+  .modal .field{margin-bottom:.85rem}
+  .modal .btn-row{margin-top:1.25rem;display:flex;gap:8px;justify-content:flex-end;align-items:center}
   .items-header{display:grid;grid-template-columns:2.5fr 110px 65px 100px 32px;gap:8px;padding:0 2px;margin-bottom:5px}
   .col-hdr{font-size:10px;font-weight:700;color:rgba(0,0,0,0.5);text-transform:uppercase;letter-spacing:.07em}
   .irow{display:grid;grid-template-columns:2.5fr 110px 65px 100px 32px;gap:8px;align-items:center;margin-bottom:6px}
@@ -245,6 +260,33 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeQuickModal()">
+  <div class="modal">
+    <h3 id="qm-title">Nuevo ítem rápido</h3>
+    <div class="field">
+      <label class="lbl">Descripción</label>
+      <input type="text" id="qm-desc" placeholder="Ej: Edición cápsula 30 min" />
+    </div>
+    <div class="field">
+      <label class="lbl">Tarifa (CLP — 0 = sin precio fijo)</label>
+      <input type="number" id="qm-tarifa" step="10000" min="0" />
+    </div>
+    <div class="field">
+      <label class="lbl">Grupo</label>
+      <select id="qm-group" onchange="onGroupChange()"></select>
+    </div>
+    <div class="field" id="qm-newgrp-wrap" style="display:none">
+      <label class="lbl">Nombre del nuevo grupo</label>
+      <input type="text" id="qm-newgrp" placeholder="Ej: Animación" />
+    </div>
+    <div class="btn-row">
+      <button class="btn danger sm" id="qm-delete" onclick="deleteQuickItem()" style="margin-right:auto">Eliminar</button>
+      <button class="btn sm" onclick="closeQuickModal()">Cancelar</button>
+      <button class="btn primary sm" onclick="saveQuickItem()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const LS='mgpost_quotes_v2';
 let items=[],iid=0,currentQuote=null;
@@ -301,7 +343,7 @@ async function saveQ(qs){
   }
   try{localStorage.setItem(LS,JSON.stringify(qs));}catch{}
 }
-const QUICK=[
+const DEFAULT_QUICK=[
   {grp:'Recaps y eventos'},
   {d:'Recap / Aftermovie 1 min',t:350000},
   {d:'Jornada edición en tiempo real',t:350000},
@@ -321,6 +363,13 @@ const QUICK=[
   {grp:'Extras'},
   {d:'Ítem personalizado',t:0},
 ];
+const QUICK_LS='mgpost_quick_items_v1';
+function loadQuick(){
+  try{const s=localStorage.getItem(QUICK_LS);if(s)return JSON.parse(s);}catch{}
+  return JSON.parse(JSON.stringify(DEFAULT_QUICK));
+}
+function saveQuickList(){try{localStorage.setItem(QUICK_LS,JSON.stringify(QUICK));}catch{}}
+let QUICK=loadQuick();
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-CL');
 const today=()=>new Date().toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'2-digit'});
 function switchTab(t){
@@ -331,10 +380,88 @@ function switchTab(t){
 }
 function buildQ(){
   const w=document.getElementById('quick-tags');w.innerHTML='';
-  QUICK.forEach(q=>{
+  QUICK.forEach((q,idx)=>{
     if(q.grp){const s=document.createElement('span');s.className='qtag grp';s.textContent=q.grp;w.appendChild(s);}
-    else{const b=document.createElement('button');b.className='qtag';b.textContent=q.t?`${q.d} — ${fmt(q.t)}`:q.d;b.onclick=()=>addItem(q.d,q.t,1);w.appendChild(b);}
+    else{
+      const wrap=document.createElement('span');wrap.className='qitem';
+      const b=document.createElement('button');b.className='qtag';b.textContent=q.t?`${q.d} — ${fmt(q.t)}`:q.d;b.onclick=()=>addItem(q.d,q.t,1);
+      const e=document.createElement('button');e.className='qedit';e.textContent='✎';e.title='Editar ítem rápido';e.type='button';e.onclick=(ev)=>{ev.stopPropagation();openQuickModal(idx);};
+      wrap.appendChild(b);wrap.appendChild(e);
+      w.appendChild(wrap);
+    }
   });
+  const addBtn=document.createElement('button');addBtn.className='qadd-new';addBtn.type='button';addBtn.textContent='+ Ítem rápido';addBtn.onclick=()=>openQuickModal(null);
+  w.appendChild(addBtn);
+}
+let qEditIdx=null;
+function groupOf(idx){
+  for(let i=idx-1;i>=0;i--){if(QUICK[i].grp)return QUICK[i].grp;}
+  return '';
+}
+function openQuickModal(idx){
+  qEditIdx=idx;
+  const groups=[...new Set(QUICK.filter(q=>q.grp).map(q=>q.grp))];
+  const sel=document.getElementById('qm-group');
+  sel.innerHTML=groups.map(g=>`<option value="${g.replace(/"/g,'&quot;')}">${g}</option>`).join('')+'<option value="__new__">+ Nuevo grupo…</option>';
+  document.getElementById('qm-newgrp-wrap').style.display='none';
+  document.getElementById('qm-newgrp').value='';
+  if(idx!==null){
+    const item=QUICK[idx];
+    document.getElementById('qm-title').textContent='Editar ítem rápido';
+    document.getElementById('qm-desc').value=item.d;
+    document.getElementById('qm-tarifa').value=item.t;
+    sel.value=groupOf(idx);
+    document.getElementById('qm-delete').style.display='inline-flex';
+  }else{
+    document.getElementById('qm-title').textContent='Nuevo ítem rápido';
+    document.getElementById('qm-desc').value='';
+    document.getElementById('qm-tarifa').value=0;
+    sel.value=groups[0]||'';
+    document.getElementById('qm-delete').style.display='none';
+  }
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('qm-desc').focus();
+}
+function closeQuickModal(){document.getElementById('modal-overlay').classList.remove('show');qEditIdx=null;}
+function onGroupChange(){
+  const sel=document.getElementById('qm-group');
+  document.getElementById('qm-newgrp-wrap').style.display=sel.value==='__new__'?'block':'none';
+}
+function insertIntoGroup(item,grp){
+  let gi=QUICK.findIndex(q=>q.grp===grp);
+  if(gi===-1){QUICK.push({grp});gi=QUICK.length-1;}
+  let end=gi+1;
+  while(end<QUICK.length&&!QUICK[end].grp)end++;
+  QUICK.splice(end,0,item);
+}
+function saveQuickItem(){
+  const d=document.getElementById('qm-desc').value.trim();
+  const t=parseInt(document.getElementById('qm-tarifa').value)||0;
+  if(!d){alert('Escribe una descripción.');return;}
+  const sel=document.getElementById('qm-group');
+  let grp=sel.value;
+  if(grp==='__new__'){
+    grp=document.getElementById('qm-newgrp').value.trim();
+    if(!grp){alert('Escribe el nombre del nuevo grupo.');return;}
+  }
+  if(qEditIdx!==null){
+    const curGrp=groupOf(qEditIdx);
+    if(curGrp!==grp){
+      QUICK.splice(qEditIdx,1);
+      insertIntoGroup({d,t},grp);
+    }else{
+      QUICK[qEditIdx].d=d;QUICK[qEditIdx].t=t;
+    }
+  }else{
+    insertIntoGroup({d,t},grp);
+  }
+  saveQuickList();buildQ();closeQuickModal();
+}
+function deleteQuickItem(){
+  if(qEditIdx===null)return;
+  if(!confirm('¿Eliminar este ítem rápido?'))return;
+  QUICK.splice(qEditIdx,1);
+  saveQuickList();buildQ();closeQuickModal();
 }
 function addItem(d,t,q){const id=++iid;items.push({id,desc:d||'',tarifa:t||0,qty:q||1});renderItems();}
 function removeItem(id){items=items.filter(i=>i.id!==id);renderItems();}
