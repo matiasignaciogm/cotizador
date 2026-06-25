@@ -532,7 +532,7 @@ function generatePreview(){
       <p>Cambios fuera del alcance original o posteriores a la aprobación final se cotizan aparte.</p>
       <p>Entrega final en formatos MP4 y PRORES 4444 XQ resolución 4K.</p>
       <p style="margin-top:8px"><strong>Cliente debe proporcionar:</strong> Material en disco SSD (se devuelve al finalizar). Alternativamente se puede usar enlace Smash para transferencia.</p>
-      <p style="margin-top:8px"><strong>Forma de pago:</strong> 50% al inicio del proyecto, 50% contra entrega.</p>
+      <p style="margin-top:8px"><strong>Forma de pago:</strong> 30 días post emisión de factura.</p>
       <p><strong>Términos:</strong> No incluye entrega de sesión o proyecto de DaVinci Resolve. Cotización válida por 1 semana desde su recepción.</p>
     </div>`;
   const pw=document.getElementById('preview-wrap');pw.style.display='block';
@@ -550,7 +550,7 @@ async function saveQuote(){
 function copyText(){
   if(!currentQuote)return;
   const d=currentQuote;
-  const lines=[`PRESUPUESTO #${d.numero} — ${d.fecha}`,`Para: ${d.cliente}${d.proyecto?' · '+d.proyecto:''}`,'',' ÍTEMS:',...d.items.map(i=>`  ${i.desc}  ×${i.qty}  ${fmt(i.tarifa*i.qty)}`),'',...(d.pct>0?[`Descuento ${d.pct}%: −${fmt(d.discAmt)}`]:[]),`Neto: ${fmt(d.neto)}`,`IVA 19%: ${fmt(d.iva)}`,`TOTAL + IVA: ${fmt(d.total)}`,'','Incluye: Montaje, Color, Diseño Sonoro y Online.','Hasta 3 rondas de revisión. Cambios adicionales se cotizan aparte.','Entrega: MP4 y PRORES 4444 XQ 4K. Pago: 50% inicio / 50% entrega. Válido 1 semana.'];
+  const lines=[`PRESUPUESTO #${d.numero} — ${d.fecha}`,`Para: ${d.cliente}${d.proyecto?' · '+d.proyecto:''}`,'',' ÍTEMS:',...d.items.map(i=>`  ${i.desc}  ×${i.qty}  ${fmt(i.tarifa*i.qty)}`),'',...(d.pct>0?[`Descuento ${d.pct}%: −${fmt(d.discAmt)}`]:[]),`Neto: ${fmt(d.neto)}`,`IVA 19%: ${fmt(d.iva)}`,`TOTAL + IVA: ${fmt(d.total)}`,'','Incluye: Montaje, Color, Diseño Sonoro y Online.','Hasta 3 rondas de revisión. Cambios adicionales se cotizan aparte.','Entrega: MP4 y PRORES 4444 XQ 4K. Pago: 30 días post emisión de factura. Válido 1 semana.'];
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const btns=document.querySelectorAll('.btn-row button'),b=btns[1],orig=b.textContent;
     b.textContent='✓ Copiado';setTimeout(()=>b.textContent=orig,2000);
