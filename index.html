@@ -73,6 +73,9 @@
   .modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--text)}
   .modal .field{margin-bottom:.85rem}
   .modal .btn-row{margin-top:1.25rem;display:flex;gap:8px;justify-content:flex-end;align-items:center}
+  .irow-desc{display:flex;flex-direction:column;gap:3px}
+  .irow input.sub-input{font-size:11px;padding:5px 8px;color:var(--text2);border-style:dashed}
+  .item-sub{display:block;font-size:11px;color:var(--doc-text2);margin-top:2px;font-weight:400}
   .items-header{display:grid;grid-template-columns:2.5fr 110px 65px 100px 32px;gap:8px;padding:0 2px;margin-bottom:5px}
   .col-hdr{font-size:10px;font-weight:700;color:rgba(0,0,0,0.5);text-transform:uppercase;letter-spacing:.07em}
   .irow{display:grid;grid-template-columns:2.5fr 110px 65px 100px 32px;gap:8px;align-items:center;margin-bottom:6px}
@@ -172,6 +175,7 @@
     .pdoc-for strong{color:#000!important}
     .ptable th{color:rgba(0,0,0,0.45)!important;border-bottom:1pt solid rgba(0,0,0,0.15)!important}
     .ptable td{color:#000!important;border-bottom:1pt solid rgba(0,0,0,0.10)!important}
+    .item-sub{color:rgba(0,0,0,0.45)!important}
     .pt-row .pl{color:rgba(0,0,0,0.55)!important}
     .pt-row .pv{color:#000!important}
     .pfinal .pl,.pfinal .pv{color:#000!important}
@@ -463,11 +467,11 @@ function deleteQuickItem(){
   QUICK.splice(qEditIdx,1);
   saveQuickList();buildQ();closeQuickModal();
 }
-function addItem(d,t,q){const id=++iid;items.push({id,desc:d||'',tarifa:t||0,qty:q||1});renderItems();}
+function addItem(d,t,q,s){const id=++iid;items.push({id,desc:d||'',tarifa:t||0,qty:q||1,sub:s||''});renderItems();}
 function removeItem(id){items=items.filter(i=>i.id!==id);renderItems();}
 function updateItem(id,f,v){
   const it=items.find(i=>i.id===id);if(!it)return;
-  if(f==='d')it.desc=v;if(f==='t')it.tarifa=parseInt(v)||0;if(f==='q')it.qty=parseInt(v)||1;
+  if(f==='d')it.desc=v;if(f==='t')it.tarifa=parseInt(v)||0;if(f==='q')it.qty=parseInt(v)||1;if(f==='s')it.sub=v;
   renderTotals();
 }
 function renderItems(){
@@ -475,7 +479,10 @@ function renderItems(){
   items.forEach(it=>{
     const row=document.createElement('div');row.className='irow';
     row.innerHTML=`
-      <input type="text" value="${it.desc.replace(/"/g,'&quot;')}" placeholder="Descripción del ítem" oninput="updateItem(${it.id},'d',this.value)"/>
+      <div class="irow-desc">
+        <input type="text" value="${it.desc.replace(/"/g,'&quot;')}" placeholder="Descripción del ítem" oninput="updateItem(${it.id},'d',this.value)"/>
+        <input type="text" class="sub-input" value="${(it.sub||'').replace(/"/g,'&quot;')}" placeholder="Descripción adicional (opcional)" oninput="updateItem(${it.id},'s',this.value)"/>
+      </div>
       <input type="number" value="${it.tarifa}" placeholder="0" step="50000" oninput="updateItem(${it.id},'t',this.value)"/>
       <input type="number" value="${it.qty}" min="1" oninput="updateItem(${it.id},'q',this.value)"/>
       <div class="sub-cell" id="sub-${it.id}">${fmt(it.tarifa*it.qty)}</div>
@@ -508,7 +515,7 @@ function generatePreview(){
   const pct=parseFloat(document.getElementById('disc-pct').value)||0;
   const disc=Math.round(bruto*pct/100),neto=bruto-disc,iva=Math.round(neto*.19),total=neto+iva;
   currentQuote={cliente,proyecto,numero,items:JSON.parse(JSON.stringify(items)),bruto,pct,discAmt:disc,neto,iva,total,fecha:today(),ts:Date.now(),estado:'pendiente'};
-  const rows=items.map(i=>`<tr><td>${i.desc||'—'}</td><td>${fmt(i.tarifa)}</td><td style="text-align:center">${i.qty}</td><td>${fmt(i.tarifa*i.qty)}</td></tr>`).join('');
+  const rows=items.map(i=>`<tr><td>${i.desc||'—'}${i.sub?`<span class="item-sub">${i.sub}</span>`:''}</td><td>${fmt(i.tarifa)}</td><td style="text-align:center">${i.qty}</td><td>${fmt(i.tarifa*i.qty)}</td></tr>`).join('');
   const discRow=pct>0?`<tr><td>Descuento pago a tiempo (${pct}%)</td><td></td><td></td><td style="color:var(--green)">−${fmt(disc)}</td></tr>`:'';
   document.getElementById('preview-doc').innerHTML=`
     <div class="pdoc-hdr">
@@ -550,7 +557,7 @@ async function saveQuote(){
 function copyText(){
   if(!currentQuote)return;
   const d=currentQuote;
-  const lines=[`PRESUPUESTO #${d.numero} — ${d.fecha}`,`Para: ${d.cliente}${d.proyecto?' · '+d.proyecto:''}`,'',' ÍTEMS:',...d.items.map(i=>`  ${i.desc}  ×${i.qty}  ${fmt(i.tarifa*i.qty)}`),'',...(d.pct>0?[`Descuento ${d.pct}%: −${fmt(d.discAmt)}`]:[]),`Neto: ${fmt(d.neto)}`,`IVA 19%: ${fmt(d.iva)}`,`TOTAL + IVA: ${fmt(d.total)}`,'','Incluye: Montaje, Color, Diseño Sonoro y Online.','Hasta 3 rondas de revisión. Cambios adicionales se cotizan aparte.','Entrega: MP4 y PRORES 4444 XQ 4K. Pago: 30 días post emisión de factura. Válido 1 semana.'];
+  const lines=[`PRESUPUESTO #${d.numero} — ${d.fecha}`,`Para: ${d.cliente}${d.proyecto?' · '+d.proyecto:''}`,'',' ÍTEMS:',...d.items.map(i=>`  ${i.desc}${i.sub?' — '+i.sub:''}  ×${i.qty}  ${fmt(i.tarifa*i.qty)}`),'',...(d.pct>0?[`Descuento ${d.pct}%: −${fmt(d.discAmt)}`]:[]),`Neto: ${fmt(d.neto)}`,`IVA 19%: ${fmt(d.iva)}`,`TOTAL + IVA: ${fmt(d.total)}`,'','Incluye: Montaje, Color, Diseño Sonoro y Online.','Hasta 3 rondas de revisión. Cambios adicionales se cotizan aparte.','Entrega: MP4 y PRORES 4444 XQ 4K. Pago: 30 días post emisión de factura. Válido 1 semana.'];
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
     const btns=document.querySelectorAll('.btn-row button'),b=btns[1],orig=b.textContent;
     b.textContent='✓ Copiado';setTimeout(()=>b.textContent=orig,2000);
@@ -602,7 +609,7 @@ async function loadIntoEditor(idx){
   const numParts=(q.numero||'').split('_');
   document.getElementById('inum').value=numParts.length>1?numParts.slice(1).join('_'):q.numero||'';
   document.getElementById('disc-pct').value=q.pct||0;
-  (q.items||[]).forEach(it=>addItem(it.desc,it.tarifa,it.qty));
+  (q.items||[]).forEach(it=>addItem(it.desc,it.tarifa,it.qty,it.sub));
   renderTotals();
   switchTab('nueva');
   window.scrollTo({top:0,behavior:'smooth'});
